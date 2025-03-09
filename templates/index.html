@@ -36,12 +36,12 @@
             font-size: 16px;
         }
         button {
-            background-color: #28a745;
+            background-color: #1c83be;
             color: white;
             cursor: pointer;
         }
         button:hover {
-            background-color: #218838;
+            background-color: #1c83be;
         }
         table {
             width: 100%;
@@ -53,7 +53,7 @@
             padding: 10px;
         }
         th {
-            background-color: #28a745;
+            background-color: #1c83be;
             color: white;
         }
         .game-container {
@@ -114,7 +114,7 @@
     to { left: -80px; }
 }
 
-    .game-over {
+.game-over {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -123,10 +123,11 @@
     font-weight: bold;
     color: red;
     background: rgba(255, 255, 255, 0.8);
-    padding: 10px;
+    padding: 15px;
     border-radius: 5px;
     display: none;
-    cursor: pointer;
+    text-align: center; /* Center the text */
+    line-height: 1.5; /* Add spacing between lines */
 }
     .score, .high-score {
     position: absolute;
@@ -168,7 +169,6 @@
     left: 20px; /* Adjust to center */
     width: 20px;  /* Reduce width */
     height: 30px; /* Reduce height */
-    border: 1px solid red; /* Keep for debugging, remove later */
 }
 .obstacle .hitbox {
     left: 30px; /* Move hitbox more to the right */
@@ -202,7 +202,11 @@
         <div class="obstacle" id="obstacle">
             <div class="hitbox"></div>
         </div>        
-        <div class="game-over" id="game-over-text">Game Over! Click to try again</div>
+        <div class="game-over" id="game-over-text">
+            <div>Game Over!</div>
+            <div>Click to try again</div>
+        </div>
+        
     </div>
     
     
