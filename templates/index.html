@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu học phí</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 50px;
+            background-color: #f4f4f4;
+            background: linear-gradient(to right, #e3f2fd, #ffffff);
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            max-width: 500px;
+            margin: auto;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .logo {
+            width: 100%;
+            max-width: 250px;
+            display: block;
+            margin: 0 auto 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px 0;
+            width: 90%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        th {
+            background-color: #28a745;
+            color: white;
+        }
+        .game-container {
+        position: relative;
+        width: 500px;
+        height: 150px;
+        border: 2px solid black;
+        margin: 20px auto;
+        overflow: hidden;
+        background-color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .dino {
+    position: absolute;
+    bottom: 0;
+    left: 50px;
+    width: 80px;
+    height: 80px;
+    background-image: url("{{ url_for('static', filename='doctor.png') }}");
+    background-size: cover; /* Ensure it stretches properly */
+    background-repeat: no-repeat;
+    animation: runAnimation 0.8s steps(10) infinite;
+}
+
+@keyframes runAnimation {
+    from { background-position: 0 0; }
+    to { background-position: -800px 0; } /* Moves across all frames */
+}
+
+
+.jump {
+    animation: jump 0.5s ease-in-out;
+    background-position: -640px 0 !important; /* Ensure correct frame */
+}
+
+@keyframes jump {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-60px); } /* Move up */
+    100% { transform: translateY(0); } /* Move down */
+}
+
+    .obstacle {
+    position: absolute;
+    bottom: 0;
+    right: -80px;
+    width: 80px;
+    height: 80px;
+    background-image: url("{{ url_for('static', filename='patient.png') }}");
+    background-size: 1000% auto; /* Same as doctor */
+    background-position: 0 0;
+    animation: runAnimation 0.8s steps(10) infinite, moveObstacle 2s linear infinite;
+}
+
+@keyframes moveObstacle {
+    from { left: 500px; }
+    to { left: -80px; }
+}
+
+    .game-over {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    font-weight: bold;
+    color: red;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 5px;
+    display: none;
+    cursor: pointer;
+}
+    .score, .high-score {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.high-score {
+    top: 35px;
+}
+
+.leaderboard {
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.leaderboard ul {
+    list-style: none;
+    padding: 0;
+}
+
+.leaderboard li {
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+}
+.hitbox {
+    position: absolute;
+    bottom: 5px;
+    left: 20px; /* Adjust to center */
+    width: 20px;  /* Reduce width */
+    height: 30px; /* Reduce height */
+    border: 1px solid red; /* Keep for debugging, remove later */
+}
+.obstacle .hitbox {
+    left: 30px; /* Move hitbox more to the right */
+}
+.paused {
+    animation-play-state: paused !important;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="{{ url_for('static', filename='LOGO-TRƯỜNG-CAO-ĐẲNG-DƯỢC-SÀI-GÒN.png') }}" alt="Trường Cao Đẳng Dược Sài Gòn" class="logo">
+        <input type="text" id="student_id" placeholder="Mã số sinh viên">
+        <button onclick="searchFees()">Tra cứu</button>
+        
+        <h3 id="result"></h3>
+        <table id="fee_table" style="display: none;">
+            <thead>
+                <tr><th>Học phí</th><th>Số tiền</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    
+    <div class="game-container" id="game-box">
+        <div class="score">🏆 Score: <span id="score">0</span></div>
+        <div class="high-score">🔥 Best: <span id="high-score">0</span></div>
+        <div class="dino" id="dino">
+            <div class="hitbox"></div>
+        </div>
+        <div class="obstacle" id="obstacle">
+            <div class="hitbox"></div>
+        </div>        
+        <div class="game-over" id="game-over-text">Game Over! Click to try again</div>
+    </div>
+    
+    
+    <div class="leaderboard">
+        <h3>🏅 Bảng Xếp Hạng</h3>
+        <ul id="leaderboard-list"></ul>
+    </div>
+    
+    
+    <script>
+        function searchFees() {
+            let studentId = document.getElementById("student_id").value;
+            if (!studentId) {
+                alert("Hãy nhập MSSV");
+                return;
+            }
+            
+            fetch(`/search?student_id=${studentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById("result").innerText = data.error;
+                        document.getElementById("fee_table").style.display = "none";
+                    } else {
+                        document.getElementById("result").innerText = `Mã sinh viên: ${data.student_id}`;
+                        let tbody = document.querySelector("#fee_table tbody");
+                        tbody.innerHTML = "";
+                        for (let key in data.tuition_fees) {
+                            let row = `<tr><td>${key}</td><td>${data.tuition_fees[key]}</td></tr>`;
+                            tbody.innerHTML += row;
+                        }
+                        document.getElementById("fee_table").style.display = "table";
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        }
+
+        document.addEventListener("keydown", function(event) {
+    let dino = document.getElementById("dino");
+
+    if (event.key === "ArrowUp" && !dino.classList.contains("jump")) {
+        dino.classList.add("jump");
+
+        setTimeout(() => {
+            dino.classList.remove("jump");
+        }, 500);
+    }
+});
+
+        document.addEventListener("DOMContentLoaded", function() {
+    let dino = document.getElementById("dino");
+    let obstacle = document.getElementById("obstacle");
+    let gameBox = document.getElementById("game-box");
+    let gameOverText = document.getElementById("game-over-text");
+    let scoreDisplay = document.getElementById("score");
+    let highScoreDisplay = document.getElementById("high-score");
+    let scoreInterval;
+    let gameRunning = true;
+    let score = 0;
+
+    // Load leaderboard from localStorage
+    let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || [];
+    updateLeaderboard();
+
+    document.addEventListener("keydown", function(event) {
+    let dino = document.getElementById("dino");
+    if (event.key === "ArrowUp" && !dino.classList.contains("jump")) {
+        dino.classList.add("jump");
+
+        setTimeout(() => {
+            checkCollision(); // Check after jump settles
+            dino.classList.remove("jump");
+        }, 500);
+    }
+});
+
+    function moveObstacle() {
+    let position = 500;
+    let speed = 5;
+
+    function updatePosition() {
+        if (!gameRunning) return;
+
+        position -= speed;
+        if (position < -80) position = 500; // Reset after leaving screen
+
+        obstacle.style.left = position + "px";
+
+        checkCollision();
+        requestAnimationFrame(updatePosition);
+    }
+
+    updatePosition();
+}
+
+    function checkCollision() {
+    let dinoHitbox = document.querySelector(".dino .hitbox").getBoundingClientRect();
+    let obstacleHitbox = document.querySelector(".obstacle .hitbox").getBoundingClientRect();
+
+    if (
+        dinoHitbox.right > obstacleHitbox.left &&
+        dinoHitbox.left < obstacleHitbox.right &&
+        dinoHitbox.bottom > obstacleHitbox.top
+    ) {
+        gameOver();
+    }
+}
+
+function gameOver() {
+    gameRunning = false;
+    gameOverText.style.display = "block";
+    clearInterval(scoreInterval);
+
+    // Stop animations
+    document.getElementById("dino").classList.add("paused");
+    document.getElementById("obstacle").classList.add("paused");
+
+    saveScore(score);
+    updateLeaderboard();
+}
+
+
+gameBox.addEventListener("click", function() {
+    if (!gameRunning) {
+        restartGame();
+    }
+});
+
+
+function restartGame() {
+    gameRunning = true;
+    score = 0;
+    scoreDisplay.innerText = "0";
+    gameOverText.style.display = "none";
+
+    // Reset obstacle and dino states
+    dino.classList.remove("paused", "jump");
+    obstacle.classList.remove("paused");
+
+    // Remove and re-add the obstacle to restart animations
+    let newObstacle = obstacle.cloneNode(true);
+    obstacle.parentNode.replaceChild(newObstacle, obstacle);
+    obstacle = newObstacle;
+
+    // Restart everything
+    moveObstacle();
+    startScoreCounter();
+}
+
+
+    function startScoreCounter() {
+        clearInterval(scoreInterval);
+        scoreInterval = setInterval(() => {
+            if (gameRunning) {
+                score += 1;
+                scoreDisplay.innerText = score;
+            }
+        }, 100);
+    }
+
+    function saveScore(newScore) {
+        leaderboard.push(newScore);
+        leaderboard.sort((a, b) => b - a); // Sort scores in descending order
+        leaderboard = leaderboard.slice(0, 5); // Keep only the top 5 scores
+        localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
+    }
+
+    function updateLeaderboard() {
+    let leaderboardList = document.getElementById("leaderboard-list");
+    leaderboardList.innerHTML = "";
+
+    const medals = ["🥇", "🥈", "🥉", "🏅", "🎖"];
+
+    leaderboard.forEach((score, index) => {
+        let listItem = document.createElement("li");
+        let medal = medals[index] || "⭐"; // Use default ⭐ if more than 5 scores
+        listItem.innerText = `${medal} #${index + 1}: ${score}`;
+        leaderboardList.appendChild(listItem);
+    });
+
+    if (leaderboard.length > 0) {
+        document.getElementById("high-score").innerText = leaderboard[0]; // Display the highest score
+    }
+}
+
+let frame = 0;
+function animateDino() {
+    frame = (frame + 1) % 4; // If 4 frames in sprite
+    document.querySelector('.dino').style.backgroundPosition = `-${frame * 64}px 0`; // Adjust based on sprite width
+}
+setInterval(animateDino, 100);
+
+    moveObstacle();
+    startScoreCounter();
+});
+    </script>
+</body>
+</html>

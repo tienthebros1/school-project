@@ -1,0 +1,67 @@
+from flask import Flask, request, render_template, jsonify, url_for
+import pandas as pd
+import os
+
+app = Flask(__name__)
+
+# Define correct file path in project root
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+FILE_PATH = os.path.join(BASE_DIR, 'tuition_fees.xlsx')
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    file.save(FILE_PATH)
+    print(f"File uploaded successfully to {FILE_PATH}")  # Debugging
+    return jsonify({'message': 'File uploaded successfully'})
+
+@app.route('/search', methods=['GET'])
+def search_student():
+    student_id = request.args.get('student_id')
+    
+    if not student_id:
+        return jsonify({'error': 'Student ID is required'}), 400
+    
+    if not os.path.exists(FILE_PATH):
+        return jsonify({'error': 'No file uploaded yet'}), 400
+    
+    try:
+        df = pd.read_excel(FILE_PATH, dtype={'Student ID': str})  # Ensure Student ID is string
+        print("Loaded Excel file successfully")  # Debugging
+    except Exception as e:
+        print(f"Error loading Excel file: {e}")  # Debugging
+        return jsonify({'error': 'Failed to load Excel file'}), 500
+
+    if 'Student ID' not in df.columns:
+        return jsonify({'error': 'Invalid file format. Missing Student ID column'}), 400
+    
+    # Normalize case and remove spaces
+    df['Student ID'] = df['Student ID'].str.strip().str.lower()
+    student_id = student_id.strip().lower()
+    
+    student_data = df[df['Student ID'] == student_id]
+    
+    if student_data.empty:
+        return jsonify({'error': 'Student not found'}), 404
+    
+    # Convert tuition fees to dictionary format
+    tuition_fees = student_data.iloc[0, 1:].tolist()
+    tuition_fees = {
+        f'Học phí lần {i+1}': "{:,.0f}".format(fee) if pd.notna(fee) else "0"
+        for i, fee in enumerate(tuition_fees)
+    }
+    
+    return jsonify({'student_id': student_id, 'tuition_fees': tuition_fees})
+
+if __name__ == '__main__':
+    app.run(debug=True)
